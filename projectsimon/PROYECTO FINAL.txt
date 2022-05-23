@@ -1,0 +1,342 @@
+;CONFIGURAR ENTRADAS Y SALIDAS
+    ldi r16,0x03
+    out ddrd,r16 ;PUERTO D: D0,D1 son salidas, D2,D3,D4 son entradas
+    ldi r16,0x0f
+    out ddrb,r16 ;PUERTO B: B0,B1,B2,B3 son salidas
+    ldi r16,0x3f 
+    out ddrc,r16 ;PUERTO C: C0,C1,C3,C4,C5 son salidas
+;REGISTROS QUE SE UTILIZAN PARA ALMACENAR DATOS DE PSEUDOALEATORIOS Y NIVELES
+    clr r29 ;Almacena el nivel que se muestra en el Display
+    clr r30 ;Registro utilizado en la secuencia pseudoaleatoria
+    clr r31 ;Registro utilizado en la secuencia pseudoaleatoria
+;ESPERAR AL QUE EL BOTON DE INICIO SEA PRESIONADO
+ESPERAR:
+    call ALEATORIO ;Llamar a la secuencia pseudoaleatoria
+    ;ACTIVAR SALIDA DE LA PRIMERA COLUMNA
+    ldi r16,0x01
+    out portd,r16 ;El voltaje de la columna 1 se activa
+    sbic pind,2 ;Si el boton de inicio no esta presionado, salta a ESPERAR
+    jmp B_INICIO ;Cuando el boton de inicio es presionado salta a B_INICIO
+    jmp ESPERAR
+;FUNCIONES DEL BOTON DE INICIO
+B_INICIO:
+    ldi r16,0x20
+    out portc,r16 ;Encender led de inicio
+    sbic pind,2 ;Mientras el boton de inicio se encuentre presionado, salta a B_INICIO
+    jmp B_INICIO
+    ldi r16,0x00
+    out portc,r16 ;Apagar led   
+;SE IDENTIFICA EN QUE NIVEL SE ENCUENTRA EL JUGADOR
+NIVEL:
+    inc r29 ;Se incrementa el registro +1 
+    out portb,r29 ;Se carga en el diplay el nivel actual
+    out portc,r17 ;En el nivel 2 o superior el registro R17 almacena y muestra  
+    ;el primer led que se encendio en la secuencia
+    call DELAY ;Tiempo de espera
+    clr r16
+    out portc,r16 ;Se apaga el led anterior
+    call DELAY
+    out portc,r18 ;En el nivel 3 o superior el registro R18 almacena y muestra  
+    ;el segundo led que se encendio en la secuencia
+    call DELAY
+    clr r16
+    out portc,r16 ;Se apaga el led anterior
+    call DELAY
+    out portc,r19 ;En el nivel 4 o superior el registro R19 almacena y muestra  
+    ;el tercer led que se encendio en la secuencia
+    call DELAY
+    clr r16
+    out portc,r16 ;Se apaga el led anterior
+    call DELAY
+    out portc,r20 ;En el nivel 5 o superior el registro R20 almacena y muestra  
+    ;el cuarto led que se encendio en la secuencia
+    call DELAY
+    clr r16
+    out portc,r16 ;Se apaga el led anterior
+    call DELAY
+    ldi r16,0x02
+    cp r16,r29 ;Se comparan los registros
+    breq NIVEL2 ;Si son iguales, va a NIVEL2
+    ldi r16,0x03
+    cp r16,r29 ;Se comparan los registros
+    breq NIVEL3 ;Si son iguales, va a NIVEL2
+    ldi r16,0x04
+    cp r16,r29 ;Se comparan los registros
+    breq NIVEL4 ;Si son iguales, va a NIVEL2
+    ldi r16,0x05
+    cp r16,r29 ;Se comparan los registros
+    breq NIVEL5 ;Si son iguales, va a NIVEL2
+;SECUENCIA QUE SE MUESTRA EN LOS LEDS EN EL NIVEL 1
+NIVEL1:
+    out portc,r30 ;Se carga el valor del resgistro en el puerto C
+    ;Uno de los leds de dicho puerto se encendera, asi comienza el primer nivel
+    call DELAY ;Esperar
+    ldi r16,0x00 
+    out portc,r16 ;Se apaga el led
+    mov r17,r30 ;Mover al registro R17 lo almacenado en R30
+    ;El registro R17 no cambia de valor hasta que el juego sea reiniciado 
+    jmp LED1 ;Salta a LED1
+;SECUENCIA QUE SE MUESTRA EN LOS LEDS EN EL NIVEL 2  
+NIVEL2: 
+    out portc,r30 ;Se carga en el puerto C el registro con el valor aleatorio para el segundo led 
+    call DELAY ;Esperar
+    ldi r16,0x00
+    out portc,r16 ;Apagar led
+    mov r18,r30 ;Mover al registro R18 lo almacenado en R30
+    ;El registro R18 no cambia de valor hasta que el juego sea reiniciado
+    jmp LED1 ;Salta a LED1
+;SECUENCIA QUE SE MUESTRA EN LOS LEDS EN EL NIVEL 3
+NIVEL3:
+    out portc,r30 ;Se carga en el puerto C el registro con el valor aleatorio para el tercer led 
+    call DELAY ;Esperar
+    ldi r16,0x00
+    out portc,r16 ;Apagar led
+    mov r19,r30 ;Mover al registro R19 lo almacenado en R30
+    ;El registro R19 no cambia de valor hasta que el juego sea reiniciado
+    jmp LED1 ;Salta a LED1
+;SECUENCIA QUE SE MUESTRA EN LOS LEDS EN EL NIVEL 4
+NIVEL4:
+    out portc,r30 ;Se carga en el puerto C el registro con el valor aleatorio para el cuarto led 
+    call DELAY ;Esperar
+    ldi r16,0x00
+    out portc,r16 ;Apagar led
+    mov r20,r30 ;Mover al registro R20 lo almacenado en R30
+    ;El registro R20 no cambia de valor hasta que el juego sea reiniciado
+    jmp LED1 ;Salta a LED1
+NIVEL5:
+    out portc,r30 ;Se carga en el puerto C el registro con el valor aleatorio para el cuarto led 
+    call DELAY ;Esperar
+    ldi r16,0x00
+    out portc,r16 ;Apagar led
+    mov r22,r30 ;Mover al registro R20 lo almacenado en R30
+    ;El registro R20 no cambia de valor hasta que el juego sea reiniciado
+    jmp LED1 ;Salta a LED1
+;SE IDENTIFICA SI EL PRIMER BOTON PRESIONADO CORRESPONDE AL PRIMER LED QUE ENCENDIO
+LED1:
+    call PRESIONAR ;Se llama a la subrutina
+    cp r17,r21 ;Si los registros son iguales, salta a LED2
+    breq LED2
+    call GAMEOVER ;Si son diferentes significa que el jugador no presiono el boton correcto
+    ;Se llama a la subrutina GAMEOVER
+    jmp ESPERAR   
+;SE IDENTIFICA SI EL SEGUNDO BOTON PRESIONADO CORRESPONDE AL SEGUNDO LED QUE ENCENDIO
+LED2:
+    ldi r16,0x01
+    cp r16,r29 
+    breq NEXT_NIVEL ;Continua el jugador con el nivel 2 
+    call PRESIONAR ;Se llama a subrutina
+    cp r18,r21 ;Se comparan registros
+    breq LED3 ;Si son iguales, el jugador gano el juego y salta al siguiente nivel
+    call GAMEOVER ;De lo contrario pierde 
+    jmp ESPERAR ;Regresa a ESPERAR
+;SE IDENTIFICA SI EL TERCER BOTON PRESIONADO CORRESPONDE AL TERCER LED QUE ENCENDIO   
+LED3:
+    ldi r16,0x02
+    cp r16,r29 
+    breq NEXT_NIVEL ;Continua el jugador con el nivel 3
+    call PRESIONAR ;Se llama a subrutina
+    cp r19,r21 ;Se comparan registros
+    breq LED4 ;Si son iguales, el jugador gano el juego y salta al siguiente nivel
+    call GAMEOVER ;De lo contrario pierde 
+    jmp ESPERAR ;Regresa a ESPERAR
+;SE IDENTIFICA SI EL CUARTO BOTON PRESIONADO CORRESPONDE AL CUARTO LED QUE ENCENDIO
+LED4:
+    ldi r16,0x03
+    cp r16,r29 
+    breq NEXT_NIVEL ;Continua el jugador con el nivel 4
+    call PRESIONAR ;Se llama a subrutina
+    cp r20,r21 ;Se comparan registros
+    breq LED5 ;Si son iguales, el jugador gano el juego y salta al siguiente nivel
+    call GAMEOVER ;De lo contrario pierde 
+    jmp ESPERAR ;Regresa a ESPERAR
+;SE IDENTIFICA SI EL QUINTO BOTON PRESIONADO CORRESPONDE AL QUINTO LED QUE ENCENDIO
+LED5:
+    ldi r16,0x04
+    cp r16,r29 
+    breq NEXT_NIVEL ;Continua el jugador con el nivel 5
+    call PRESIONAR ;Se llama a subrutina
+    cp r22,r21 ;Se comparan registros
+    breq WINNER ;Si son iguales, el jugador gano el juego y salta a WINNER
+    call GAMEOVER ;De lo contrario pierde 
+    jmp ESPERAR ;Regresa a ESPERAR
+;SE ENCIENDE EL LED DE INICIO INDICANDO QUE AVANZA AL SIGUIENTE NIVEL
+NEXT_NIVEL:
+    ldi r16,0x20
+    out portc,r16 ;Se enciende led de inicio
+    call DELAY ;Espera
+    clr r16
+    out portc,r16 ;Se apaga led
+    jmp NIVEL ;Salata a NIVEL para continuar
+;EL JUGADOR LOGRO LOS NIVELES, SE CARGA SECUENCIA QUE DEMUESTRA QUE GANO 
+WINNER:
+    ldi r16,0x00
+    out portc,r16 ;Se apaga los leds del puerto C
+    ldi r16,0x00
+    out portb,r16 ;Se carga a cero el display
+    call DELAY ;Espera
+    ldi r16,0x05
+    out portb,r16 ;Se carga de nuevo el nivel 5
+    call DELAY ;Espera
+    ldi r16,0x00
+    out portb,r16 ;Se carga a cero el display
+    call DELAY ;Espera
+    ldi r16,0x05
+    out portb,r16 ;Se carga de nuevo el nivel 5
+    call DELAY ;Espera
+    ldi r16,0x00
+    out portb,r16 ;Se carga a cero el display
+    call DELAY ;Espera
+    ldi r16,0x05
+    out portb,r16 ;Se carga de nuevo el nivel 5
+    call GAMEOVER ;LLama a subrutina para resetear registros
+    jmp ESPERAR ;Regresa a la espera de un nuevo juego
+;SUBRUTINA PARA IDENTIFICAR EL BOTON PRESIONADO    
+PRESIONAR:
+    call ALEATORIO ;Se llama a la subrutina aleatoria 
+    ldi r16,0x01 
+    out portd,r16 ;Columna 1 activa 
+    sbic pind,3 ;Si el boton Rojo no es presionado brinca la siguiente instruccion
+    jmp B_ROJO
+    sbic pind,4 ;Si el boton Azul no es presionado brinca la siguiente instruccion
+    jmp B_AZUL
+    call DELAYFUENTE ;Se llama a un retardo para desactivar columna 1 y activar columna 2
+    ldi r16,0x02
+    out portd,r16 ;Columna 2 activa
+    sbic pind,2 ;Si el boton RESET no es presionado brinca la siguiente instruccion
+    jmp B_RESET
+    sbic pind,3 ;Si el boton VERDE no es presionado brinca la siguiente instruccion
+    jmp B_VERDE
+    sbic pind,4 ;Si el boton AMARILLO no es presionado brinca la siguiente instruccion
+    jmp B_AMARILLO
+    call DELAYFUENTE ;Se llama a un retardo para desactivar columna 2 y activar columna 1
+    jmp PRESIONAR ;Regresa al inicio de la etiqueta y se repite el proceso
+;ENCENDER EL LED PRESIONADO POR EL JUGADOR    
+B_ROJO:
+    ldi r16,0x08 ;Direccion del led rojo conectado al puerto C
+    out portc,r16 ;Se enciende el led rojo
+    sbic pind,3 ;Mientras el boton que enciende el led siga presionado, regresa a B_ROJO
+    jmp B_ROJO
+    ldi r16,0x00 
+    out portc,r16 ;Se apaga el led 
+    ldi r21,0x08 ;Se almacena el valor cargado previamente en el puerto c
+    ret ;Regresa hasta donde se llamo la subrutina
+B_AZUL:
+    ldi r16,0x02 ;Direccion del led Azul conectado al puerto C
+    out portc,r16 
+    sbic pind,4
+    jmp B_AZUL
+    ldi r16,0x00
+    out portc,r16
+    ldi r21,0x02
+    ret ;regresa
+B_VERDE:
+    ldi r16,0x04 ;Direccion del led Verde conectado al puerto C
+    out portc,r16
+    sbic pind,3
+    jmp B_VERDE
+    ldi r16,0x00
+    out portc,r16
+    ldi r21,0x04
+    ret ;regresa
+B_AMARILLO: ;Direccion del led Amarillo conectado al puerto C
+    ldi r16,0x01
+    out portc,r16 
+    sbic pind,4
+    jmp B_AMARILLO
+    ldi r16,0x00
+    out portc,r16
+    ldi r21,0x01
+    ret ;regresa
+B_RESET: ;Direccion del led de RESET conectado al puerto C
+    ldi r16,0x10
+    out portc,r16 ;Se enciende el led de reset
+    sbic pind,2 ;Mientras siga presionado el boton reset, salta a B_RESET
+    jmp B_RESET 
+    ldi r16,0x00
+    out portc,r16 ;Se apaga el led
+    ldi r21,0x10
+    ret ;regresa
+
+;RESTABLECER VALORES DE REGISTROS A CERO
+GAMEOVER:
+    clr r17
+    clr r18
+    clr r19
+    clr r20
+    clr r22
+    clr r29 
+    clr r30 
+    clr r31
+    ldi r16,0x10
+    cp r21,r16  ;Si los registros son iguales significa que se presiono el boton reset
+    breq FIN ;Salta hasta FIN
+    ldi r16,0x10
+    out portc,r16 ;Se enciende el led de reset
+    call DELAY ;Espera
+    ldi r16,0x00
+    out portc,r16 ;Se apaga led
+FIN:
+    out portb,r29 ;Se carga en el display el valor 0
+    ret ; Regresa
+;CODIGO DONDE SE DETERMINA QUE LED ENCENDERA DE ACUERDO AL INCREMENTO QUE TIENE EL R31
+ALEATORIO:
+    ldi r16,0x00 ;Se almacena 0 en el registro R16
+    cp r16,r31 ;Se comparan los registros
+    breq AMARILLO ;Si son iguales, salta a AMARILLO
+    ldi r16,0x01 ;Se almacena 1 en el registro R16
+    cp r16,r31 ;Se comparan los registros
+    breq AZUL ;Si son iguales, salta a AZUL
+    ldi r16,0x02 ;Se almacena 2 en el registro R16
+    cp r16,r31 ;Se comparan los registros
+    breq VERDE ;Si son iguales, salta a VERDE
+    ldi r16,0x03 ;Se almacena 3 en el registro R16
+    cp r16,r31 ;Se comparan los registros
+    breq ROJO ;Si son iguales, salta a ROJO
+    jmp REINICIAR_R31 ;El resgistro R31 almacena un valor mayor a 3, se debe reiniciar
+;SE ALMACENA LA DIRECCION DEL LED EN R30 PARA USARLO EN LA SECUENCIA 
+AMARILLO:
+    ldi r30,0x01 ;Se almacena en el resgistro R30 la direccion del led en el puerto c
+    inc r31 ;Se incrementa el resgistro +1
+    ret ;Regresa
+AZUL:
+    ldi r30,0x02 ;Se almacena en el resgistro R30 la direccion del led en el puerto c  
+    inc r31 ;Se incrementa el resgistro +1
+    ret ;Regresa
+VERDE:
+    ldi r30,0x04 ;Se almacena en el resgistro R30 la direccion del led en el puerto c
+    inc r31 ;Se incrementa el resgistro +1
+    ret ;Regresa
+ROJO:
+    ldi r30,0x08 ;Se almacena en el resgistro R30 la direccion del led en el puerto c
+    inc r31 ;Se incrementa el resgistro +1
+    ret ;Regresa
+;EL VALOR EN EL REGISTRO R31 ES SUPERIOR A 3, SE DEBE RESTABLECER EL VALOR A 0
+REINICIAR_R31:
+    clr r31 ;Se reinicia a cero 
+    jmp ALEATORIO ;Salta a ALEATORIO 
+;RETARDO 
+DELAY: ;Inicio de la subrutina DELAY
+    ldi r25,0x010 ;Carga a R22 con la cantidad de veces que se repetirán los ciclos
+ETI1: ldi r27,250 ;Carga a R20 con el valor 250
+ETI2: ldi r28,250 ;Carga a R21 con el valor 250
+ETI3: nop ;NOP = No Operación (4 uS por iteración)
+    dec r28 ;Decrementa en 1 a R21
+    brne ETI3 ;Mientras ZF=0, brinca a ETI3
+    dec r27;Decrementa en 1 a R20
+    brne ETI2 ;Mientras ZF=0, brinca a ETI2
+    dec r25 ;Decrementa en 1 a R22
+    brne ETI1 ;Mientras ZF=0, brinca a ETI1
+    ret ;Retorna el control  
+DELAYFUENTE: ;Inicio de la subrutina 
+    ldi r25,0x02 ;Carga a R22 con la cantidad de veces que se repetirán los ciclos
+TI1: ldi r27,250 ;Carga a R20 con el valor 250
+TI2: ldi r28,250 ;Carga a R21 con el valor 250
+TI3: nop ;NOP = No Operación (4 uS por iteración)
+    dec r28 ;Decrementa en 1 a R21
+    brne TI3 ;Mientras ZF=0, brinca a ETI3
+    dec r27;Decrementa en 1 a R20
+    brne TI2 ;Mientras ZF=0, brinca a ETI2
+    dec r25 ;Decrementa en 1 a R22
+    brne TI1 ;Mientras ZF=0, brinca a ETI1
+    ret ;Retorna el control 
+    
